@@ -125,7 +125,7 @@ public class SingleMessageInterface extends AppCompatActivity {
      */
     private boolean isSendMessageTimeOut = true;
 
-    private Handler handler = new Handler(){
+    private Handler  handler = new Handler(){
         public void handleMessage(Message msg) {
             switch (msg.what) {
                 case 1://getdata timeout error
