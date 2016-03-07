@@ -7,7 +7,6 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,9 +21,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.amap.api.maps.model.LatLng;
 import com.iflytek.cloud.InitListener;
 import com.iflytek.cloud.SpeechConstant;
 import com.iflytek.cloud.SpeechError;
@@ -33,18 +35,12 @@ import com.iflytek.cloud.SpeechUtility;
 import com.iflytek.cloud.SynthesizerListener;
 import com.yasic.waveboxapp.Adapters.ChatlistAdapter;
 import com.yasic.waveboxapp.Objects.User;
-import com.yasic.waveboxapp.Objects.UserMessage;
 import com.yasic.waveboxapp.R;
-import com.yasic.waveboxapp.Services.Socket_service;
+import com.yasic.waveboxapp.Services.SocketService;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -69,7 +65,7 @@ public class MainActivity extends AppCompatActivity
      */
     private ChatlistAdapter chatlistAdapter;
 
-    private List<User> userList;
+    private List<User> userList = new ArrayList<>();
 
     /**
      * 合成监听器
@@ -77,18 +73,22 @@ public class MainActivity extends AppCompatActivity
     private SynthesizerListener mSynListener = new SynthesizerListener(){
         //会话结束回调接口，没有错误时，error为null
         public void onCompleted(SpeechError error) {
-            Log.i("speecherror","1234");
+
         }
         //缓冲进度回调
         //percent为缓冲进度0~100，beginPos为缓冲音频在文本中开始位置，endPos表示缓冲音频在文本中结束位置，info为附加信息。
-        public void onBufferProgress(int percent, int beginPos, int endPos, String info) {}
+        public void onBufferProgress(int percent, int beginPos, int endPos, String info) {
+        }
         //开始播放
-        public void onSpeakBegin() {}
+        public void onSpeakBegin() {
+        }
         //暂停播放
-        public void onSpeakPaused() {}
+        public void onSpeakPaused() {
+        }
         //播放进度回调
         //percent为播放进度0~100,beginPos为播放音频在文本中开始位置，endPos表示播放音频在文本中结束位置.
-        public void onSpeakProgress(int percent, int beginPos, int endPos) {}
+        public void onSpeakProgress(int percent, int beginPos, int endPos) {
+        }
         //恢复播放回调接口
         public void onSpeakResumed() {}
         //会话事件回调接口
@@ -110,7 +110,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         initMD();
         initViews();
-        startSocketService();
         installLocationBrodcastReceiver();
         initAndCheckSpeechFunction();
 
@@ -134,6 +133,24 @@ public class MainActivity extends AppCompatActivity
         if(info[0].equals("V")){
             tvSpeed.setText(info[6]);
         }
+        if(info[2].equals("V")){
+            boolean isExit = false;
+            if(userList.size() == 0){
+                userList.add(new User(info[0]));
+                chatlistAdapter.refresh(userList);
+            }
+            else{
+                for(int i = 0; i < userList.size(); i++){
+                    if(userList.get(i).getUserNickName().equals(info[0])){
+                        isExit = true;
+                    }
+                }
+                if(!isExit){
+                    userList.add(new User(info[0]));
+                    chatlistAdapter.refresh(userList);
+                }
+            }
+        }
     }
 
     private void initAndCheckSpeechFunction(){
@@ -144,6 +161,16 @@ public class MainActivity extends AppCompatActivity
             Intent it = new Intent(Intent.ACTION_VIEW, uri);
             this.startActivity(it);
         }
+        //1.创建SpeechSynthesizer对象
+        SpeechSynthesizer mTts= SpeechSynthesizer.createSynthesizer(MainActivity.this, mInitListener);
+        //初始化监听器,同听写初始化监听器，使用云端的情况下不需要监听即可使用，本地需要监听
+        //2.合成参数设置
+        //设置引擎类型为本地
+        mTts.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_LOCAL);
+        //可跳转到语音+发音人设置页面进行发音人下载
+        //SpeechUtility.getUtility().openEngineSettings(SpeechConstant.ENG_TTS);
+        //3.开始合成
+        mTts.startSpeaking("", mSynListener);
     }
 
     private void initViews(){
@@ -153,10 +180,22 @@ public class MainActivity extends AppCompatActivity
         rvChatlist.setAdapter(chatlistAdapter);
         rvChatlist.setLayoutManager(new LinearLayoutManager(this));
         rvChatlist.setItemAnimator(new DefaultItemAnimator());
+        chatlistAdapter.setOnItemClickListener(new ChatlistAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(View v, int position) {
+                Intent intent = new Intent(MainActivity.this, SingleMessageInterface.class);
+                startActivity(intent);
+            }
+
+            @Override
+            public void onItemLongCick(View v, int position) {
+
+            }
+        });
     }
 
     private void startSocketService() {
-        startService(new Intent(MainActivity.this, Socket_service.class));
+        startService(new Intent(MainActivity.this, SocketService.class));
     }
 
     private void initMD() {
@@ -168,18 +207,6 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 startActivity(new Intent(MainActivity.this, MapLocateActivity.class));
-                /*//1.创建SpeechSynthesizer对象
-                SpeechSynthesizer mTts= SpeechSynthesizer.createSynthesizer(MainActivity.this, mInitListener);
-                //初始化监听器,同听写初始化监听器，使用云端的情况下不需要监听即可使用，本地需要监听
-                //2.合成参数设置
-                //设置引擎类型为本地
-                mTts.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_LOCAL);
-                //可跳转到语音+发音人设置页面进行发音人下载
-                //SpeechUtility.getUtility().openEngineSettings(SpeechConstant.ENG_TTS);
-                //3.开始合成
-                mTts.startSpeaking("精益求精", mSynListener);*/
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
             }
         });
 
@@ -215,27 +242,31 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
-
+        if (id == R.id.action_serviceswich){
+            if (item.isChecked()){
+                stopService(new Intent(MainActivity.this, SocketService.class));
+                item.setChecked(false);
+            }
+            else {
+                startSocketService();
+                item.setChecked(true);
+            }
+        }
         return super.onOptionsItemSelected(item);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         if (id == R.id.nav_camara) {
-            // Handle the camera action
+
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {

@@ -6,7 +6,7 @@ package com.yasic.waveboxapp.Utils;
 public class UserUtils {
     private static String localUsrAccount = "2207793765@qq.com";
 
-    private static String localUsrNickName = "yasic";
+    private static String localUsrNickName = "Yasic";
 
     public static String getLocalUsrNickName() {
         return localUsrNickName;

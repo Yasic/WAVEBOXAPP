@@ -6,10 +6,21 @@
         android:orderInCategory="100"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_serviceswich"
+        android:title="车载服务开关"
+        android:orderInCategory="200"
+        android:checkable="true"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_search"
         android:orderInCategory="60"
         android:title="action_search"
         app:actionViewClass="android.support.v7.widget.SearchView"
         app:showAsAction="ifRoom"
         />
+    <item
+        android:id="@+id/action_send"
+        android:title="send"
+        android:icon="@android:drawable/ic_menu_send"
+        app:showAsAction="ifRoom"/>
 </menu>

@@ -44,7 +44,7 @@
             android:name="com.amap.api.v2.apikey"
             android:value="f834c2849b338f4f96d1d237afadd34e" />
 
-        <service android:name=".Services.Socket_service" />
+        <service android:name=".Services.SocketService" />
 
         <activity
             android:name=".Activitys.MainActivity"

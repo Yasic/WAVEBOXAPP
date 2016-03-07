@@ -4,15 +4,13 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.TextView;
 
 import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdate;
@@ -23,8 +21,6 @@ import com.amap.api.maps.model.CameraPosition;
 import com.amap.api.maps.model.LatLng;
 import com.amap.api.maps.model.Marker;
 import com.amap.api.maps.model.MarkerOptions;
-import com.amap.api.maps.offlinemap.OfflineMapCity;
-import com.amap.api.maps.offlinemap.OfflineMapManager;
 import com.yasic.waveboxapp.R;
 import com.yasic.waveboxapp.Utils.MathUtils;
 
@@ -44,6 +40,11 @@ public class MapLocateActivity extends AppCompatActivity {
      * 显示map的mapview
      */
     private MapView mapView;
+
+    /**
+     * 显示车辆时速的textview
+     */
+    private TextView tvSpeed;
 
     /**
      * 车辆坐标广播接收器
@@ -70,10 +71,10 @@ public class MapLocateActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maplocate);
         initMap(savedInstanceState);
-        initFAB();
+        initView();
     }
 
-    private void initFAB(){
+    private void initView(){
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -81,6 +82,7 @@ public class MapLocateActivity extends AppCompatActivity {
                 startActivity(new Intent(MapLocateActivity.this, MainActivity.class));
             }
         });
+        tvSpeed = (TextView)findViewById(R.id.tv_speed);
     }
 
     /**
@@ -166,7 +168,7 @@ public class MapLocateActivity extends AppCompatActivity {
     }
 
     /**
-     * 注册本地地理位置广播接收器
+     * 注册地理位置广播接收器
      */
     private void installLocationBrodcastReceiver(){
         locationBrodcastReceiver = new BroadcastReceiver() {
@@ -182,20 +184,20 @@ public class MapLocateActivity extends AppCompatActivity {
     }
 
     /**
-     * 处理收到的本地坐标消息
-     * @param locationInfo 传入收到的本地坐标信息
+     * 处理收到的坐标消息
+     * @param locationInfo 传入收到的坐标信息
      */
     private void dealLocationInfo(String locationInfo){
         String[] info = locationInfo.split(" ");
         if(info[0].equals("V")){
             moveMapToDes(new LatLng(Double.valueOf(info[2]),Double.valueOf(info[4])));
+            tvSpeed.setText(info[6]);
             return;
         }
         if (info[2].equals("V")){
             markOtherCar(info);
             return;
         }
-
     }
 
     @Override
